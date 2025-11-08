@@ -167,9 +167,4 @@ graph TD
 
 ---
 
-## ✨ 作者
 
-**Yuyang**  
-Henan University of Technology  
-Project: *IL-23 antibody–antigen PPI analysis using AlphaFold3 predictions*  
-Date: 2025
