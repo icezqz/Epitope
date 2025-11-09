@@ -1,0 +1,5 @@
+model_name,interaction,count
+MJ00D_173,VdWContact,109
+MJ00D_173,Hydrophobic,40
+MJ00D_173,HBAcceptor,9
+MJ00D_173,HBDonor,1

@@ -1,0 +1,57 @@
+# config.yaml
+# 统一配置 RMSD、Rename、MSA/Index Mapping、GD/AF3 PPI、Overlap 参数
+
+common:
+  N_JOBS: 4
+  plot_bins: 50
+  plot_kde: true
+  scheme: "kabat"
+  similarity_threshold: 0.9
+  ncpu: 1
+  ANTIGEN_CHAIN: "A"
+  CHAIN_TARGET: "A"
+  CHAIN_QUERY: "H,L"
+  NO_PYMOL: true
+  OVERLAP_THRESHOLD: 0.6
+
+paths:
+  BASE_DIR: "/home/yuyang/lb_yaml/data/IL23"
+
+rmsd:
+  GROUND_TRUTH_PATH: "${paths.BASE_DIR}/5njd.pdb"
+  PREDICTED_DIR: "${paths.BASE_DIR}/cif"
+  OUTPUT_DIR: "${paths.BASE_DIR}/output"
+
+rename:
+  PDB_NAME: "5njd.pdb"
+  PDB_DIR: "${paths.BASE_DIR}"
+  CIF_DIR: "${paths.BASE_DIR}/cif"
+
+msa_index_map:
+  PDB_FILE: "${paths.BASE_DIR}/5njd.pdb"
+  CIF_DIR: "${paths.BASE_DIR}/cif"
+  OUTPUT_FASTA: "${paths.BASE_DIR}/msa_fasta/IL23_antigen_for_msa.fasta"
+  OUTPUT_ALN: "${paths.BASE_DIR}/msa_aln/IL23_antigen_for_msa.aln.fasta"
+  OUTPUT_MAPPING: "${paths.BASE_DIR}/pdb_to_af3_mapping.csv"
+
+gd_results_ppi:
+  PDB_FILE: "${paths.BASE_DIR}/5njd.pdb"
+  PPI_DIR: "${paths.BASE_DIR}/ppi_csv_gd"
+  OUTPUT_SUMMARY: "${paths.BASE_DIR}/ppi_summary_gd.csv"
+
+af3_results_ppi:
+  CIF_FOLDER: "${paths.BASE_DIR}/cif"
+  PDB_FOLDER: "${paths.BASE_DIR}/cif_pdb"
+  RMSD_FILE: "${paths.BASE_DIR}/output/VHVL_RMSD_results.csv"
+  PPI_FOLDER: "${paths.BASE_DIR}/ppi_csv_af3"
+  PPI_SUMMARY: "${paths.BASE_DIR}/ppi_summary_af3.csv"
+  MAPPING_FILE: "${paths.BASE_DIR}/pdb_to_af3_mapping.csv"
+  OUTPUT_MAPPING: "${paths.BASE_DIR}/ppi_summary_mapping.csv"
+
+overlap:
+  AF3_FILE: "${paths.BASE_DIR}/ppi_summary_af3.csv"
+  GD_FILE: "${paths.BASE_DIR}/ppi_summary_gd.csv"
+  MAP_FILE: "${paths.BASE_DIR}/pdb_to_af3_mapping.csv"
+  OUTPUT_FILE_SIMPLE: "${paths.BASE_DIR}/af3_gd_overlap.csv"
+  OUTPUT_FILE_MAPPED: "${paths.BASE_DIR}/af3_gd_overlap_mapped.csv"
+  THRESHOLD: 0.6
