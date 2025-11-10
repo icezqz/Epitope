@@ -1,170 +1,173 @@
-# Epitope
-# 🧬 IL-23 Antibody–Antigen Interaction Analysis Pipeline
+# 🧬 Antibody–Antigen Structural Analysis Pipeline
 
-本项目用于对 **AlphaFold3 (AF3)** 预测的抗体–抗原复合物结构进行 **质量评估、相互作用分析与结果映射**，并与实验结构 (ground truth) 进行系统对比。  
-适用于基于 **PPI 计算 + RMSD 分析** 的抗体预测模型验证与性能评估。
+该仓库提供了一整套用于 **抗体–抗原复合物分析** 的自动化脚本，包括：
+- PDB 与 AF3 结构文件的统一命名；
+- RMSD 计算；
+- PDB–MSA–AF3 残基编号映射；
+- PPI（Protein–Protein Interaction）结合位点分析；
+- GD 与 AF3 结果重映射及重叠区域计算。
 
----
-
-## 📁 项目结构
-
-```
-IL23-ppi-analysis/
-├── rename.ipynb                   # 实验结构链标准化与命名修复
-├── compute_rmsd.py                # 计算 AF3 模型与实验结构的 VH/VL RMSD
-├── gd_results_ppi.ipynb           # 实验结构 (ground truth) PPI 计算
-├── af3_results_ppi.ipynb          # AF3 预测结构 PPI 计算与映射
-├── pdb_to_af3_mapping.csv         # 残基索引映射表（AF3 → 实验结构）
-├── /data/IL23/
-│   ├── 5njd.pdb                   # 实验结构 (ground truth)
-│   ├── cif/                       # AF3 预测结构 (.cif)
-│   ├── cif_pdb/                   # 筛选后转换为 PDB 的文件
-│   ├── processed_cif_pdb/         # 为 PPI 计算准备的结构 (双链 A/B)
-│   ├── processed_groundtruth/     # 处理后的实验结构
-│   ├── ppi_csv/                   # AF3 模型的 PPI 结果
-│   ├── ppi_csv_gd/                # 实验结构的 PPI 结果
-│   ├── ppi_summary_af3.csv        # AF3 汇总结合位点
-│   ├── ppi_summary_gd.csv         # 实验结构汇总结合位点
-│   ├── ppi_summary_mapping.csv    # AF3 位点映射至实验结构
-│   └── VHVL_RMSD_results.csv      # 各模型 RMSD 结果
-└── README.md                      # 本说明文件
-```
+本项目旨在支持 **抗体结构预测模型（如 AlphaFold3）与实验结构** 的系统性比较分析。
 
 ---
 
-## ⚙️ 环境配置
+## 🧱 项目结构
 
-建议使用 Conda 环境：
+```
+.
+├── config.yaml                    # 全局配置文件（统一所有路径与参数）
+├── rename.ipynb                   # 重命名 PDB/CIF 文件（确保文件名一致）
+├── rmsd.py                        # 计算 RMSD，结构相似性评估
+├── msa_index_map.ipynb            # PDB ↔ MSA ↔ AF3 残基编号映射
+├── gd_results_ppi.ipynb           # 提取 GD 预测的抗原结合位点
+├── af3_results_ppi.ipynb          # 提取 AF3 预测的抗原结合位点
+├── overlap_analysis.ipynb         # 计算 GD 与 AF3 的结合位点重叠比例
+├── data/
+│   ├── IL23/
+│   │   ├── 5njd.pdb              # 实验结构（Ground Truth）
+│   │   ├── cif/                  # AF3 模型预测 CIF 文件夹
+│   │   ├── cif_pdb/              # 转换后的 PDB 文件夹
+│   │   ├── msa_fasta/            # MSA 输入序列
+│   │   ├── msa_aln/              # 对齐后的 MSA 结果
+│   │   ├── ppi_csv_gd/           # GD 的 PPI 分析结果
+│   │   ├── ppi_csv_af3/          # AF3 的 PPI 分析结果
+│   │   ├── output/               # RMSD 输出文件
+│   │   ├── pdb_to_af3_mapping.csv# PDB–AF3 残基映射表
+│   │   ├── ppi_summary_gd.csv    # GD PPI 汇总
+│   │   ├── ppi_summary_af3.csv   # AF3 PPI 汇总
+│   │   ├── af3_gd_overlap.csv    # 简单重叠结果
+│   │   └── af3_gd_overlap_mapped.csv # 基于残基映射的重叠结果
+└── README.md
+```
+
+---
+
+## ⚙️ 全局配置文件说明 (`config.yaml`)
+
+仓库中所有脚本均通过统一的配置文件 `config.yaml` 管理路径与参数，修改后会自动生效。
+
+
+---
+
+## 🧩 核心流程
+
+### 1️⃣ Rename 阶段  
+确保 `PDB` 与 `CIF` 文件命名一致，便于后续批量分析。
 
 ```bash
-conda create -n ppi python=3.10
-conda activate ppi
+jupyter nbconvert --to notebook --execute rename.ipynb
+```
 
-# 基础依赖
-conda install -c conda-forge mdanalysis biopython pandas tqdm seaborn matplotlib joblib requests
-pip install bioblocks
+输出：`/cif_pdb/` 目录中与原始 PDB 对应的同名 `.pdb` 文件。
 
-# 需要外部命令行工具
-# 确保 ppi.analyse 可在命令行中直接运行
+---
+
+### 2️⃣ RMSD 计算  
+
+在统一命名后，计算实验结构与预测模型的 **VH/VL RMSD**，用于衡量结构相似度。
+
+```bash
+python rmsd.py
+```
+
+输出：  
+`output/VHVL_RMSD_results.csv`，示例：
+
+| model_name | VH_RMSD | VL_RMSD | average |
+|-------------|----------|----------|----------|
+| MJ00D_0     | 1.82     | 2.14     | 1.98     |
+
+> ⚠️ RMSD 阈值设定为 **60 Å**，超过该值将被视为异常模型。
+
+---
+
+### 3️⃣ MSA/Index Mapping  
+
+建立 **PDB–MSA–AF3 残基编号映射表**，解决多序列比对中 `-`（gap） 引起的编号错位问题。
+
+```bash
+jupyter nbconvert --to notebook --execute msa_index_map.ipynb
+```
+
+输出：`pdb_to_af3_mapping.csv`，示例：
+
+| pdb_residue_id | msa_index | af3_residue_id |
+|----------------|------------|----------------|
+| 36             | 10         | 37             |
+| 37             | 11         | 38             |
+| ...            | ...        | ...            |
+
+---
+
+### 4️⃣ PPI 分析  
+
+从 GD 与 AF3 输出的 CSV 文件中提取抗原结合位点信息。
+
+```bash
+jupyter nbconvert --to notebook --execute gd_results_ppi.ipynb
+jupyter nbconvert --to notebook --execute af3_results_ppi.ipynb
+```
+
+输出示例：
+
+**GD结果**
+```csv
+model_name,antigen_binding_sites_gd
+5njd,"36,37,38,39,40,107,108,109,110,111,115,124,125,126,219"
+```
+
+**AF3结果**
+```csv
+model_name,antigen_binding_sites_AF3
+MJ00D_0,"37,38,39,40,69,78,80,81,82,83,84,106,108,109,115,217,218,219"
 ```
 
 ---
 
-## 🚀 运行流程
+### 5️⃣ Overlap 分析  
 
-### 🧩 Step 1. 计算 RMSD（筛选预测结构质量）
-**脚本：** `compute_rmsd.py`
+利用残基映射表计算 GD 与 AF3 的结合位点重叠率：
 
 ```bash
-python compute_rmsd.py
+jupyter nbconvert --to notebook --execute overlap_analysis.ipynb
 ```
 
 输出：
-- `VHVL_RMSD_results.csv`：各模型 VH+VL 的 RMSD  
-- `VHVL_RMSD_dist.png`：RMSD 分布直方图  
-
-作用：选择 RMSD ≤ 30 的结构作为后续分析对象。
+- `af3_gd_overlap.csv`：直接基于原残基编号计算；
+- `af3_gd_overlap_mapped.csv`：基于 PDB–AF3 编号映射后的精确比较。
 
 ---
 
-### 🧬 Step 2. 标准化实验结构链命名
-**脚本：** `rename.ipynb`
+## 📊 输出文件汇总
 
-功能：
-- 下载并读取实验结构（如 PDB ID: 5NJD）
-- 自动识别并分类 H、L、A 链
-- 重新命名链为标准形式（H/L/A）
-- 输出修正后的结构
-
-输出文件示例：
-```
-/home/yuyang/lb/data/IL23/5njd.pdb
-```
-
----
-
-### 🧠 Step 3. 计算实验结构的 PPI（Ground Truth）
-
-**脚本：** `gd_results_ppi.ipynb`
-
-功能：
-- 将实验结构转换为双链（A-B）
-- 分别计算 H_to_B_no_L 与 L_to_B_no_H 的 PPI
-- 汇总所有抗原结合位点到：
-  ```
-  /home/yuyang/lb/data/IL23/ppi_summary_gd.csv
-  ```
-
----
-
-### 🤖 Step 4. 计算 AF3 预测结构的 PPI
-
-**脚本：** `af3_results_ppi.ipynb`
-
-功能：
-1. 根据 RMSD ≤ 30 的模型，从 `.cif` 转为 `.pdb`
-2. 对 PDB 文件进行链处理（生成双链结构）
-3. 调用 `ppi.analyse` 计算抗原–抗体相互作用
-4. 汇总结果为：
-   ```
-   /home/yuyang/lb/data/IL23/ppi_summary_af3.csv
-   ```
-
----
-
-### 🔁 Step 5. 映射 AF3 位点至实验结构编号体系
-
-**脚本：** `af3_results_ppi.ipynb`（后半部分）
-
-利用 `pdb_to_af3_mapping.csv`，将 AF3 的残基编号转换为实验结构的编号：
-```
-/home/yuyang/lb/data/IL23/ppi_summary_mapping.csv
-```
-
-该文件用于后续评估预测精度。
-
----
-
-## 📊 结果说明
-
-| 文件 | 内容 |
+| 文件 | 描述 |
 |------|------|
-| `VHVL_RMSD_results.csv` | 每个预测模型与实验结构的 VH/VL RMSD |
-| `ppi_summary_gd.csv` | 实验结构的抗原结合位点 |
-| `ppi_summary_af3.csv` | AF3 预测结构的结合位点 |
-| `ppi_summary_mapping.csv` | AF3 位点映射到实验结构编号体系后的结果 |
+| `VHVL_RMSD_results.csv` | RMSD 计算结果 |
+| `pdb_to_af3_mapping.csv` | 残基编号映射表 |
+| `ppi_summary_gd.csv` | GD PPI 汇总 |
+| `ppi_summary_af3.csv` | AF3 PPI 汇总 |
+| `af3_gd_overlap_mapped.csv` | 基于映射的重叠结果 |
 
 ---
 
-## 🧩 模块依赖关系
+## 💡 注意事项
 
-```mermaid
-graph TD
-    A[compute_rmsd.py] --> B[af3_results_ppi.ipynb]
-    B --> C[ppi_summary_af3.csv]
-    D[rename.ipynb] --> E[gd_results_ppi.ipynb]
-    E --> F[ppi_summary_gd.csv]
-    C --> G[ppi_summary_mapping.csv]
-    F --> G
-```
-
----
-
-## 💡 输出结果可用于
-
-- 对比 AF3 与实验结构的抗原结合位点重叠度；
-- 评估 AF3 在界面残基识别层面的预测性能；
-- 分析 RMSD 与结合位点预测准确率的相关性。
+- 所有路径均可通过 `config.yaml` 一处修改；
+- 运行顺序建议：
+  ```
+  rename → rmsd → msa_index_map → gd_results_ppi → af3_results_ppi → overlap_analysis
+  ```
+- MSA 阶段若出现 gap（`-`），脚本会自动跳过并打印警告；
+- 可使用多线程 (`N_JOBS`) 提升运行速度；
+- 若不使用 PyMOL，请确保 `NO_PYMOL: true`。
 
 ---
 
-## 🧑‍🔬 引用工具
+## ✍️ 作者与维护
 
-- [Bioblocks](https://pypi.org/project/bioblocks/)
-- [MDAnalysis](https://www.mdanalysis.org/)
-- [ANARCI](https://github.com/oxpig/ANARCI)
-- `ppi.analyse` 命令行工具（自定义或外部提供）
-
----
+- **Author:** Yuyang  
+- **Institution:** SJTU 
+- **Contact:** ice292@sjtu.edu.cn 
+- **Last Updated:** 2025-11-10  
 
 
