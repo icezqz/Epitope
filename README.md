@@ -58,7 +58,7 @@
 jupyter nbconvert --to notebook --execute rename.ipynb
 ```
 
-输出：`/cif_pdb/` 目录中与原始 PDB 对应的同名 `.pdb` 文件。
+
 
 ---
 
@@ -133,7 +133,6 @@ jupyter nbconvert --to notebook --execute overlap_analysis.ipynb
 ```
 
 输出：
-- `af3_gd_overlap.csv`：直接基于原残基编号计算；
 - `af3_gd_overlap_mapped.csv`：基于 PDB–AF3 编号映射后的精确比较。
 
 ---
